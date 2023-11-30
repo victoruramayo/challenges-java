@@ -4,8 +4,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Scanner;
 
@@ -58,6 +56,7 @@ public class HackerLanguage implements Challenge {
 
     @Override
     public void execute() {
+        var scan=new Scanner(System.in);
         LOG.info("""
                 
                 Seleccionaste:
@@ -66,19 +65,28 @@ public class HackerLanguage implements Challenge {
                 se caracteriza por sustituir caracteres alfanuméricos.
                 - Utiliza esta tabla (https://www.gamehouse.com/blog/leet-speak-cheat-sheet/)
                 con el alfabeto y los números en "leet".
-                (Usa la primera opción de cada transformación. Por ejemplo "4" para la "a")""");
-
-        LOG.info("""
+                (Usa la primera opción de cada transformación. Por ejemplo "4" para la "a")
                 
-                Probando texto '{}': {}""", TEST_1,coverter(TEST_1.toUpperCase()));
+                Escribe el texto a convertir o presiona 0 para salir.
+                """);
 
-        System.out.println();
 
-        LOG.info("""
-                
-                Probando texto '{}': {}""", TEST_2,coverter(TEST_2.toUpperCase()));
+        while (!scan.hasNextInt() || scan.nextInt() != 0) {
+            var text = scan.hasNextLine() ? scan.nextLine() : "";
+            if ( !text.isEmpty()) {
+                LOG.info("""
+                                        
+                        Probando texto '{}': {} \n""", text, coverter(text.toUpperCase()));
+                continue;
+            }
+            LOG.info("""
+                                        
+                        Probando texto '{}': {} \n""", TEST_1, coverter(TEST_1.toUpperCase()));
+            LOG.info("""
+                                        
+                        Probando texto '{}': {} \n""", TEST_2, coverter(TEST_2.toUpperCase()));
+        }
 
-        System.out.println();
 
     }
 
