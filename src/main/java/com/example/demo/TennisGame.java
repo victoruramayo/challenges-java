@@ -5,20 +5,89 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
+import java.util.Map;
 
 @Component
 public class TennisGame implements Challenge {
     private static final Logger LOG = LoggerFactory
             .getLogger(TennisGame.class);
 
-    private record Point<T, P>(T first, P second) {}
+    private static class Game {
+        private Score scoreFirtsPlayer;
+        private Score scoreSecondPlayer;
+        private static final Map<Score, Score> scores = Map.of(
+                Score.ZERO, Score.ONE,
+                Score.ONE, Score.TWO,
+                Score.TWO, Score.THREE,
+                Score.THREE, Score.AD,
+                Score.AD, Score.WINNER,
+                Score.WINNER, Score.WINNER
+        );
 
-    private enum Players {
+        public Game(Score first, Score second) {
+            this.scoreFirtsPlayer = first;
+            this.scoreSecondPlayer = second;
+        }
+
+        public Score getScoreFirtsPlayer() {
+            return scoreFirtsPlayer;
+        }
+
+        public Score getScoreSecondPlayer() {
+            return scoreSecondPlayer;
+        }
+
+        public String markPlayerScore(Player player) {
+
+            if (player == Player.P1) {
+                if (this.scoreFirtsPlayer == Score.THREE && this.scoreSecondPlayer == Score.AD) {
+                    this.scoreSecondPlayer = Score.THREE;
+                    return "Deuce";
+                } else {
+                    this.scoreFirtsPlayer = scores.get(this.scoreFirtsPlayer);
+                }
+                if (this.scoreFirtsPlayer == Score.AD || this.scoreFirtsPlayer ==Score.WINNER){
+                    return "%s %s".formatted(this.scoreFirtsPlayer.getValue(),player);
+                }
+            }
+            if (player == Player.P2) {
+                if (this.scoreSecondPlayer == Score.THREE && this.scoreFirtsPlayer == Score.AD) {
+                    this.scoreFirtsPlayer = Score.THREE;
+                } else {
+                    this.scoreSecondPlayer = scores.get(this.scoreSecondPlayer);
+                }
+                if (this.scoreFirtsPlayer == Score.AD || this.scoreFirtsPlayer ==Score.WINNER){
+                    return "%s %s".formatted(this.scoreSecondPlayer.getValue(),player);
+                }
+            }
+
+            if( this.scoreFirtsPlayer == Score.THREE && this.scoreSecondPlayer == Score.THREE){
+                return "Deuce";
+            }
+
+            return "%s %s".formatted(this.getScoreFirtsPlayer().getValue(), this.getScoreSecondPlayer().getValue());
+        }
+    }
+
+    private enum Player {
         P1("P1"), P2("P2");
         private final String value;
 
-        Players(String player) {
+        Player(String player) {
             this.value = player;
+        }
+
+        public String getValue() {
+            return this.value;
+        }
+    }
+
+    private enum Score {
+        ZERO("LOVE"), ONE("15"), TWO("30"), THREE("40"), AD("Ventaja"), WINNER("Ha Ganado");
+        private final String value;
+
+        Score(String score) {
+            this.value = score;
         }
 
         public String getValue() {
@@ -48,49 +117,31 @@ public class TennisGame implements Challenge {
                  * - Consulta las reglas del juego si tienes dudas sobre el sistema de puntos.  \s
                 """);
 
-        var points = new Point<>("Love", "Love");
+        var game = new Game(Score.ZERO, Score.ZERO);
 
-        var game = List.of(Players.P1,
-                Players.P1,
-                Players.P2,
-                Players.P2,
-                Players.P1,
-                Players.P2,
-                Players.P1,
-                Players.P2,
-                Players.P1,
-                Players.P1
+        var points = List.of(Player.P1,
+                Player.P1,
+                Player.P2,
+                Player.P2,
+                Player.P1,
+                Player.P2,
+                Player.P1,
+                Player.P2,
+                Player.P1,
+                Player.P1
         );
 
-        System.out.println(points.first()+ " " + points.second());
-        for (Players p : game) {
+        System.out.println(game.getScoreSecondPlayer().getValue() + " " + game.getScoreFirtsPlayer().getValue());
+        for (Player p : points) {
+            if(game.getScoreSecondPlayer()==Score.WINNER || game.getScoreFirtsPlayer()==Score.WINNER){
+                System.out.println("Partido finalizado");
+                continue;
+            }
             System.out.println(p.getValue());
-            points=rulesPoints(p,points);
-            System.out.println(points.first()+ " " + points.second());
+            System.out.println(game.markPlayerScore(p));
         }
-
 
     }
 
-    private Point<String, String> rulesPoints(Players matcher, Point<String, String> points) {
-        if (matcher == Players.P1) {
-            return switch (points.first()) {
-                case "Love" -> new Point<>("15", points.second());
-                case "15" -> new Point<>("30", points.second());
-                case "30" -> new Point<>("40", points.second());
-                case "40" -> points.second().equals("Ventaja P2") ? new Point<>("40", "40") : new Point<>("Ventaja P1", points.second());
-                case "Ventaja P1" -> new Point<>("Winner", "Loser");
-                default -> points;
-            };
-        }
-        return switch (points.second()) {
-            case "Love" -> new Point<>(points.first(), "15");
-            case "15" -> new Point<>(points.first(), "30");
-            case "30" -> new Point<>(points.first(), "40");
-            case "40" -> points.first().equals("Ventaja P1") ? new Point<>("40", "40") : new Point<>(points.first(), "Ventaja P2");
-            case "Ventaja P2" -> new Point<>("Loser", "Winner");
-            default -> points;
-        };
-    }
 }
 
